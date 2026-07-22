@@ -2,6 +2,11 @@
   publish = "public"
   functions = "netlify/functions"
 
+[build.environment]
+  # SUPABASE_URL non è un vero segreto: viene usata volutamente nel codice
+  # pubblico del sito (il browser deve conoscerla per parlare con Supabase).
+  SECRETS_SCAN_OMIT_KEYS = "SUPABASE_URL"
+
 [[redirects]]
   from = "/*"
   to = "/index.html"
