@@ -1,0 +1,92 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Informazioni legali — Kaoni Design</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<link rel="stylesheet" href="/assets/site.css">
+<style>
+  .legal-page{ max-width:720px; margin:0 auto; padding:160px 24px 100px; }
+  .legal-page h1{ font-family:'Archivo Black', sans-serif; text-transform:uppercase; font-size:1.8rem; margin-bottom:36px; }
+  .legal-page h1 span{ color:var(--red-bright); }
+
+  .legal-tabs{ display:flex; gap:8px; margin-bottom:30px; flex-wrap:wrap; }
+  .legal-tab{
+    background:none; border:1px solid var(--line); color:var(--text-dim); padding:10px 18px;
+    font-size:12px; font-weight:700; letter-spacing:0.05em; text-transform:uppercase;
+  }
+  .legal-tab.active{ border-color:var(--red-bright); color:var(--red-bright); }
+
+  .legal-content{ color:var(--text-dim); font-size:14px; line-height:1.8; white-space:pre-wrap; }
+  .legal-content:empty::before{ content:'Questa sezione non è ancora stata compilata.'; color:var(--text-dim); font-style:italic; }
+
+  .legal-contact{ margin-top:60px; padding-top:30px; border-top:1px solid var(--line); font-size:13px; color:var(--text-dim); line-height:1.8; }
+  .legal-contact strong{ color:var(--text); }
+</style>
+</head>
+<body>
+
+<div id="site-header-slot"></div>
+
+<div class="legal-page">
+  <h1>Informazioni <span>legali.</span></h1>
+
+  <div class="legal-tabs">
+    <button class="legal-tab active" data-legal-tab="terms">Termini</button>
+    <button class="legal-tab" data-legal-tab="privacy">Privacy</button>
+    <button class="legal-tab" data-legal-tab="returns">Resi</button>
+  </div>
+
+  <div class="legal-content" id="legalContent">Caricamento...</div>
+
+  <div class="legal-contact" id="legalContact"></div>
+</div>
+
+<div id="site-cart-slot"></div>
+<div class="toast" id="toast"></div>
+
+<script src="/assets/site.js"></script>
+<script>
+  let siteSettingsData = null;
+
+  async function loadLegalContent(){
+    if(!supabaseReady) return;
+    try{
+      const { data, error } = await supabaseClient.from('site_settings').select('*').eq('id', 1).single();
+      if(error) throw error;
+      siteSettingsData = data;
+      showLegalTab('terms');
+
+      const contactParts = [];
+      if(data.contact_email) contactParts.push(`<strong>Email:</strong> ${escapeHtml(data.contact_email)}`);
+      if(data.contact_phone) contactParts.push(`<strong>Telefono:</strong> ${escapeHtml(data.contact_phone)}`);
+      if(data.store_address) contactParts.push(`<strong>Indirizzo:</strong> ${escapeHtml(data.store_address)}`);
+      document.getElementById('legalContact').innerHTML = contactParts.join('<br>');
+    }catch(e){
+      console.error(e);
+      document.getElementById('legalContent').textContent = 'Errore nel caricamento.';
+    }
+  }
+
+  function showLegalTab(tab){
+    document.querySelectorAll('.legal-tab').forEach(t=>t.classList.toggle('active', t.dataset.legalTab === tab));
+    const map = { terms: 'terms_text', privacy: 'privacy_text', returns: 'returns_text' };
+    const content = siteSettingsData ? (siteSettingsData[map[tab]] || '') : '';
+    document.getElementById('legalContent').textContent = content;
+  }
+
+  document.querySelectorAll('.legal-tab').forEach(tab=>{
+    tab.addEventListener('click', ()=> showLegalTab(tab.dataset.legalTab));
+  });
+
+  (async function(){
+    await initSharedUI();
+    loadLegalContent();
+  })();
+</script>
+
+</body>
+</html>

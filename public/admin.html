@@ -1,0 +1,596 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="robots" content="noindex, nofollow">
+<title>Admin — Kaoni Design</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<link rel="stylesheet" href="/assets/site.css">
+<style>
+  .admin-gate{ min-height:100vh; display:flex; align-items:center; justify-content:center; text-align:center; padding:40px; }
+  .admin-gate p{ color:var(--text-dim); font-size:14px; max-width:360px; }
+
+  .admin-panel{ display:none; padding:140px 30px 80px; }
+  .admin-panel.open{ display:block; }
+  .admin-header-row{ max-width:1200px; margin:0 auto 30px; display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:14px; }
+  .admin-header-row h1{ font-family:'Archivo Black', sans-serif; font-size:1.5rem; text-transform:uppercase; }
+  .admin-header-row h1 span{ color:var(--red-bright); }
+
+  .admin-body{ padding:0; max-width:1200px; margin:0 auto; }
+  .admin-tabs{ display:flex; gap:8px; margin-bottom:30px; flex-wrap:wrap; }
+  .admin-tab{
+    background:none; border:1px solid var(--line); color:var(--text-dim); padding:10px 20px;
+    font-size:12px; font-weight:700; text-transform:uppercase;
+  }
+  .admin-tab.active{ border-color:var(--red-bright); color:var(--red-bright); }
+
+  .admin-section{ display:none; }
+  .admin-section.active{ display:block; }
+
+  .admin-card{ background:var(--surface); border:1px solid var(--line); padding:26px; margin-bottom:20px; }
+  .admin-card h3{ font-family:'Archivo Black', sans-serif; text-transform:uppercase; font-size:1rem; margin-bottom:20px; color:var(--text); }
+
+  .admin-list-item{
+    display:flex; justify-content:space-between; align-items:center; padding:14px 16px;
+    background:var(--surface-2); border:1px solid var(--line); margin-bottom:8px; gap:12px; flex-wrap:wrap;
+  }
+  .admin-list-item-info{ font-size:13px; }
+  .admin-list-item-info .sub{ color:var(--text-dim); font-size:11px; margin-top:4px; }
+  .admin-list-actions{ display:flex; gap:8px; }
+  .product-list-thumb{ width:44px; height:56px; object-fit:cover; background:var(--surface); flex-shrink:0; }
+  .admin-empty-note{ color:var(--text-dim); font-size:13px; padding:20px 0; text-align:center; }
+  .img-preview{ width:90px; height:110px; object-fit:cover; background:var(--surface-2); border:1px solid var(--line); margin-top:10px; }
+
+  .admin-order-card{ background:var(--surface-2); border:1px solid var(--line); padding:20px; margin-bottom:14px; }
+  .admin-order-top{ display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:14px; flex-wrap:wrap; gap:10px; }
+  .admin-order-customer{ font-size:14px; font-weight:700; }
+  .admin-order-email{ font-size:12px; color:var(--text-dim); margin-top:4px; }
+  .admin-order-meta{ font-size:11px; color:var(--text-dim); text-align:right; }
+  .admin-order-address{ font-size:13px; color:var(--text); line-height:1.6; background:var(--surface); border:1px solid var(--line); padding:12px 14px; margin-bottom:14px; }
+  .admin-order-address-label{ font-size:10px; text-transform:uppercase; color:var(--text-dim); letter-spacing:0.05em; margin-bottom:6px; }
+  .admin-order-items{ font-size:13px; color:var(--text-dim); margin-bottom:10px; }
+  .admin-order-total{ font-size:15px; font-weight:700; }
+  .order-status{ display:inline-block; font-size:10px; text-transform:uppercase; padding:3px 8px; border:1px solid var(--red-bright); color:var(--red-bright); margin-top:6px; }
+</style>
+</head>
+<body>
+
+<div id="site-header-slot"></div>
+
+<div class="admin-gate" id="adminGate">
+  <p id="adminGateMessage">Verifica dei permessi in corso...</p>
+</div>
+
+<div class="admin-panel" id="adminPanelPage">
+  <div class="admin-header-row">
+    <h1>KAONI<span>.</span> Admin</h1>
+    <a href="/" class="icon-btn">Torna al sito</a>
+  </div>
+
+  <div class="admin-body">
+    <div class="admin-tabs">
+      <button class="admin-tab active" data-tab="tab-products">Prodotti</button>
+      <button class="admin-tab" data-tab="tab-categories">Categorie</button>
+      <button class="admin-tab" data-tab="tab-orders">Ordini</button>
+      <button class="admin-tab" data-tab="tab-site">Sito</button>
+    </div>
+
+    <!-- PRODUCTS TAB -->
+    <div class="admin-section active" id="tab-products">
+      <div class="admin-card">
+        <h3>Nuovo prodotto</h3>
+        <div class="form-row">
+          <div class="form-field">
+            <label>Titolo *</label>
+            <input type="text" id="pTitle" placeholder="Es. Felpa Kaoni Signature">
+          </div>
+          <div class="form-field">
+            <label>Prezzo (€) *</label>
+            <input type="number" id="pPrice" step="0.01" placeholder="49.90">
+          </div>
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label>Categoria *</label>
+            <select id="pCategory"></select>
+          </div>
+          <div class="form-field">
+            <label>Sottocategoria</label>
+            <select id="pSubcategory"></select>
+          </div>
+        </div>
+        <div class="form-field">
+          <label>Descrizione</label>
+          <textarea id="pDesc" rows="3" placeholder="Descrizione del capo..."></textarea>
+        </div>
+        <div class="form-row-3">
+          <div class="form-field">
+            <label>Taglie disponibili</label>
+            <input type="text" id="pSizes" placeholder="XS, S, M, L, XL">
+          </div>
+          <div class="form-field">
+            <label>Colore</label>
+            <input type="text" id="pColor" placeholder="Nero / Rosso">
+          </div>
+          <div class="form-field">
+            <label>Materiale</label>
+            <input type="text" id="pMaterial" placeholder="Cotone 100%">
+          </div>
+        </div>
+        <div class="form-row-3">
+          <div class="form-field">
+            <label>SKU / Codice (opz.)</label>
+            <input type="text" id="pSku" placeholder="KN-0001">
+          </div>
+          <div class="form-field">
+            <label>Quantità in stock (opz.)</label>
+            <input type="number" id="pStock" placeholder="20">
+          </div>
+          <div class="form-field">
+            <label>Paese di produzione (opz.)</label>
+            <input type="text" id="pOrigin" placeholder="Italia">
+          </div>
+        </div>
+        <div class="form-field">
+          <label>Note aggiuntive (opz.)</label>
+          <input type="text" id="pNotes" placeholder="Lavaggio a mano, edizione limitata, ecc.">
+        </div>
+        <div class="form-field">
+          <label>Immagine prodotto (URL)</label>
+          <input type="text" id="pImageUrl" placeholder="https://...">
+          <img id="pImgPreview" class="img-preview" style="display:none;">
+        </div>
+        <div class="form-field" style="display:flex; align-items:center; gap:10px;">
+          <input type="checkbox" id="pIsSecret" style="width:auto;">
+          <label style="margin:0;" for="pIsSecret">Prodotto esclusivo — visibile solo nella pagina drop segreto</label>
+        </div>
+        <button class="save-btn" id="pSaveBtn">Aggiungi prodotto</button>
+      </div>
+
+      <div class="admin-card">
+        <h3>Prodotti esistenti</h3>
+        <div id="productList"></div>
+      </div>
+    </div>
+
+    <!-- CATEGORIES TAB -->
+    <div class="admin-section" id="tab-categories">
+      <div class="admin-card">
+        <h3>Nuova categoria</h3>
+        <div class="form-row">
+          <div class="form-field">
+            <label>Nome categoria *</label>
+            <input type="text" id="catName" placeholder="Es. Uomo">
+          </div>
+          <div class="form-field" style="display:flex; align-items:flex-end;">
+            <button class="save-btn" id="catSaveBtn" style="width:100%;">Aggiungi categoria</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="admin-card">
+        <h3>Categorie e sottocategorie</h3>
+        <div id="categoryList"></div>
+      </div>
+
+      <div class="admin-card">
+        <h3>Nuova sottocategoria</h3>
+        <div class="form-row">
+          <div class="form-field">
+            <label>Categoria padre *</label>
+            <select id="subParentCat"></select>
+          </div>
+          <div class="form-field">
+            <label>Nome sottocategoria *</label>
+            <input type="text" id="subName" placeholder="Es. Felpe">
+          </div>
+        </div>
+        <button class="save-btn" id="subSaveBtn">Aggiungi sottocategoria</button>
+      </div>
+    </div>
+
+    <!-- ORDERS TAB -->
+    <div class="admin-section" id="tab-orders">
+      <div class="admin-card">
+        <h3>Tutti gli ordini</h3>
+        <div id="adminOrdersList"><div class="admin-empty-note">Caricamento...</div></div>
+      </div>
+    </div>
+
+    <!-- SITE SETTINGS TAB -->
+    <div class="admin-section" id="tab-site">
+      <div class="admin-card">
+        <h3>Informazioni di contatto</h3>
+        <div class="form-row">
+          <div class="form-field">
+            <label>Email di contatto</label>
+            <input type="email" id="siteContactEmail" placeholder="info@kaonidesign.com">
+          </div>
+          <div class="form-field">
+            <label>Telefono</label>
+            <input type="text" id="siteContactPhone" placeholder="+41 79 000 00 00">
+          </div>
+        </div>
+        <div class="form-field">
+          <label>Indirizzo negozio</label>
+          <input type="text" id="siteStoreAddress" placeholder="Via Esempio 1, 6900 Lugano">
+        </div>
+        <button class="save-btn" id="saveContactBtn">Salva contatti</button>
+        <div class="cart-error" id="contactSettingsError"></div>
+      </div>
+
+      <div class="admin-card">
+        <h3>Testi legali</h3>
+        <div class="form-field">
+          <label>Termini e condizioni</label>
+          <textarea id="siteTerms" rows="6" placeholder="Scrivi qui i termini e condizioni..."></textarea>
+        </div>
+        <div class="form-field">
+          <label>Privacy policy</label>
+          <textarea id="sitePrivacy" rows="6" placeholder="Scrivi qui l'informativa privacy..."></textarea>
+        </div>
+        <div class="form-field">
+          <label>Politica di reso</label>
+          <textarea id="siteReturns" rows="6" placeholder="Scrivi qui la politica di reso..."></textarea>
+        </div>
+        <button class="save-btn" id="saveLegalBtn">Salva testi legali</button>
+        <div class="cart-error" id="legalSettingsError"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="site-cart-slot"></div>
+<div class="toast" id="toast"></div>
+
+<script src="/assets/site.js"></script>
+<script>
+  let state = { categories: [], products: [] };
+
+  function uid(prefix){ return prefix + '-' + Date.now().toString(36) + Math.random().toString(36).slice(2,7); }
+
+  // ===== GATE: verifica sessione + ruolo admin al caricamento della pagina =====
+  async function checkAdminAccess(){
+    const gate = document.getElementById('adminGate');
+    const gateMsg = document.getElementById('adminGateMessage');
+    const panel = document.getElementById('adminPanelPage');
+
+    if(!supabaseReady){
+      gateMsg.textContent = 'Supabase non configurato.';
+      return;
+    }
+
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if(!session){
+      gateMsg.textContent = 'Devi accedere al tuo account per entrare qui. Ti reindirizziamo...';
+      setTimeout(()=>{ window.location.href = '/account.html'; }, 1500);
+      return;
+    }
+
+    const { data: profile, error } = await supabaseClient
+      .from('profiles').select('is_admin').eq('id', session.user.id).single();
+
+    if(error || !profile || !profile.is_admin){
+      gateMsg.textContent = 'Il tuo account non ha i permessi per accedere qui.';
+      setTimeout(()=>{ window.location.href = '/'; }, 1800);
+      return;
+    }
+
+    gate.style.display = 'none';
+    panel.classList.add('open');
+    await loadAdminData();
+    renderAll();
+    loadAdminOrders();
+    loadSiteSettings();
+  }
+
+  async function loadAdminData(){
+    const [{ data: categories }, { data: products }] = await Promise.all([
+      supabaseClient.from('categories').select('*').order('created_at', { ascending:true }),
+      supabaseClient.from('products').select('*').order('created_at', { ascending:false })
+    ]);
+    state.categories = (categories || []).map(c => ({ id:c.id, name:c.name, subs: c.subs || [] }));
+    state.products = (products || []).map(p => ({
+      id:p.id, title:p.title, price:p.price, categoryId:p.category_id, subcategoryId:p.subcategory_id || '',
+      description:p.description||'', sizes:p.sizes||'', color:p.color||'', material:p.material||'',
+      sku:p.sku||'', stock:p.stock||'', origin:p.origin||'', notes:p.notes||'', imageUrl:p.image_url||'',
+      isSecret: !!p.is_secret, createdAt: p.created_at
+    }));
+  }
+
+  async function saveProductToSupabase(p){
+    const { error } = await supabaseClient.from('products').upsert({
+      id:p.id, title:p.title, price:p.price, category_id:p.categoryId, subcategory_id:p.subcategoryId || null,
+      description:p.description, sizes:p.sizes, color:p.color, material:p.material,
+      sku:p.sku, stock:p.stock, origin:p.origin, notes:p.notes, image_url:p.imageUrl,
+      is_secret: !!p.isSecret
+    });
+    if(error){ console.error(error); showToast('Errore nel salvataggio prodotto su Supabase.'); }
+  }
+
+  async function deleteProductFromSupabase(productId){
+    const { error } = await supabaseClient.from('products').delete().eq('id', productId);
+    if(error){ console.error(error); showToast('Errore nell\'eliminazione prodotto su Supabase.'); }
+  }
+
+  async function saveCategoryToSupabase(cat){
+    const { error } = await supabaseClient.from('categories').upsert({ id:cat.id, name:cat.name, subs:cat.subs });
+    if(error){ console.error(error); showToast('Errore nel salvataggio categoria su Supabase.'); }
+  }
+
+  async function deleteCategoryFromSupabase(catId){
+    const { error } = await supabaseClient.from('categories').delete().eq('id', catId);
+    if(error){ console.error(error); showToast('Errore nell\'eliminazione categoria su Supabase.'); }
+  }
+
+  function renderAll(){
+    renderAdminCategorySelects();
+    renderAdminCategoryList();
+    renderAdminProductList();
+  }
+
+  /* ===== CATEGORY SELECTS ===== */
+  function renderAdminCategorySelects(){
+    const pCat = document.getElementById('pCategory');
+    const subParent = document.getElementById('subParentCat');
+    pCat.innerHTML = state.categories.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+    subParent.innerHTML = state.categories.map(c=>`<option value="${c.id}">${escapeHtml(c.name)}</option>`).join('');
+    renderSubcategorySelect(pCat.value);
+  }
+
+  function renderSubcategorySelect(catId){
+    const pSub = document.getElementById('pSubcategory');
+    const cat = state.categories.find(c=>c.id===catId);
+    if(!cat || cat.subs.length===0){ pSub.innerHTML = '<option value="">— Nessuna —</option>'; return; }
+    pSub.innerHTML = '<option value="">— Nessuna —</option>' + cat.subs.map(s=>`<option value="${s.id}">${escapeHtml(s.name)}</option>`).join('');
+  }
+
+  document.getElementById('pCategory').addEventListener('change', (e)=> renderSubcategorySelect(e.target.value));
+
+  /* ===== ADD PRODUCT ===== */
+  document.getElementById('pImageUrl').addEventListener('input', (e)=>{
+    const preview = document.getElementById('pImgPreview');
+    if(e.target.value){ preview.src = e.target.value; preview.style.display = 'block'; }
+    else{ preview.style.display = 'none'; }
+  });
+
+  document.getElementById('pSaveBtn').addEventListener('click', async ()=>{
+    const title = document.getElementById('pTitle').value.trim();
+    const price = document.getElementById('pPrice').value;
+    const categoryId = document.getElementById('pCategory').value;
+    if(!title || !price || !categoryId){ showToast('Compila titolo, prezzo e categoria.'); return; }
+
+    const product = {
+      id: uid('prod'), title, price: parseFloat(price), categoryId,
+      subcategoryId: document.getElementById('pSubcategory').value || '',
+      description: document.getElementById('pDesc').value.trim(),
+      sizes: document.getElementById('pSizes').value.trim(),
+      color: document.getElementById('pColor').value.trim(),
+      material: document.getElementById('pMaterial').value.trim(),
+      sku: document.getElementById('pSku').value.trim(),
+      stock: document.getElementById('pStock').value.trim(),
+      origin: document.getElementById('pOrigin').value.trim(),
+      notes: document.getElementById('pNotes').value.trim(),
+      imageUrl: document.getElementById('pImageUrl').value.trim(),
+      isSecret: document.getElementById('pIsSecret').checked,
+      createdAt: Date.now()
+    };
+    state.products.unshift(product);
+    await saveProductToSupabase(product);
+    document.getElementById('pIsSecret').checked = false;
+    ['pTitle','pPrice','pDesc','pSizes','pColor','pMaterial','pSku','pStock','pOrigin','pNotes','pImageUrl'].forEach(id=>{
+      document.getElementById(id).value = '';
+    });
+    document.getElementById('pImgPreview').style.display = 'none';
+    renderAll();
+    showToast('Prodotto aggiunto con successo.');
+  });
+
+  function renderAdminProductList(){
+    const wrap = document.getElementById('productList');
+    if(state.products.length === 0){ wrap.innerHTML = '<div class="admin-empty-note">Nessun prodotto ancora creato.</div>'; return; }
+    wrap.innerHTML = '';
+    state.products.forEach(p=>{
+      const cat = state.categories.find(c=>c.id===p.categoryId);
+      const row = document.createElement('div');
+      row.className = 'admin-list-item';
+      const thumb = p.imageUrl ? `<img class="product-list-thumb" src="${escapeAttr(p.imageUrl)}">` : `<div class="product-list-thumb"></div>`;
+      row.innerHTML = `
+        <div style="display:flex; align-items:center; gap:14px;">
+          ${thumb}
+          <div class="admin-list-item-info">
+            <strong>${escapeHtml(p.title)}</strong> — € ${Number(p.price).toFixed(2)}
+            <div class="sub">${cat ? escapeHtml(cat.name) : ''}${p.sku ? ' · SKU: '+escapeHtml(p.sku) : ''}${p.isSecret ? ' · Esclusivo' : ''}</div>
+          </div>
+        </div>
+        <div class="admin-list-actions">
+          <button class="icon-btn danger" data-id="${p.id}">Elimina</button>
+        </div>`;
+      row.querySelector('.danger').addEventListener('click', async ()=>{
+        state.products = state.products.filter(x=>x.id!==p.id);
+        await deleteProductFromSupabase(p.id);
+        renderAll();
+        showToast('Prodotto eliminato.');
+      });
+      wrap.appendChild(row);
+    });
+  }
+
+  /* ===== CATEGORIES ===== */
+  document.getElementById('catSaveBtn').addEventListener('click', async ()=>{
+    const name = document.getElementById('catName').value.trim();
+    if(!name){ showToast('Inserisci un nome categoria.'); return; }
+    const newCat = { id: uid('cat'), name, subs: [] };
+    state.categories.push(newCat);
+    document.getElementById('catName').value = '';
+    await saveCategoryToSupabase(newCat);
+    renderAll();
+    showToast('Categoria aggiunta.');
+  });
+
+  document.getElementById('subSaveBtn').addEventListener('click', async ()=>{
+    const parentId = document.getElementById('subParentCat').value;
+    const name = document.getElementById('subName').value.trim();
+    if(!parentId || !name){ showToast('Seleziona categoria e inserisci un nome.'); return; }
+    const cat = state.categories.find(c=>c.id===parentId);
+    cat.subs.push({ id: uid('sub'), name });
+    document.getElementById('subName').value = '';
+    await saveCategoryToSupabase(cat);
+    renderAll();
+    showToast('Sottocategoria aggiunta.');
+  });
+
+  function renderAdminCategoryList(){
+    const wrap = document.getElementById('categoryList');
+    if(state.categories.length === 0){ wrap.innerHTML = '<div class="admin-empty-note">Nessuna categoria ancora creata.</div>'; return; }
+    wrap.innerHTML = '';
+    state.categories.forEach(cat=>{
+      const row = document.createElement('div');
+      row.className = 'admin-list-item';
+      row.style.flexDirection = 'column';
+      row.style.alignItems = 'stretch';
+      const subsHtml = cat.subs.map(s=>`
+        <div class="admin-list-item" style="background:var(--surface); margin-left:20px;">
+          <div class="admin-list-item-info">${escapeHtml(s.name)}</div>
+          <div class="admin-list-actions">
+            <button class="icon-btn danger" data-subid="${s.id}">Elimina</button>
+          </div>
+        </div>`).join('');
+      row.innerHTML = `
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <div class="admin-list-item-info"><strong>${escapeHtml(cat.name)}</strong></div>
+          <div class="admin-list-actions">
+            <button class="icon-btn danger" data-catid="${cat.id}">Elimina categoria</button>
+          </div>
+        </div>
+        <div style="margin-top:8px;">${subsHtml}</div>`;
+
+      row.querySelector('[data-catid]').addEventListener('click', async ()=>{
+        const hasProducts = state.products.some(p=>p.categoryId===cat.id);
+        if(hasProducts){ showToast('Impossibile eliminare: ci sono prodotti in questa categoria.'); return; }
+        state.categories = state.categories.filter(c=>c.id!==cat.id);
+        await deleteCategoryFromSupabase(cat.id);
+        renderAll();
+        showToast('Categoria eliminata.');
+      });
+
+      row.querySelectorAll('[data-subid]').forEach(btn=>{
+        btn.addEventListener('click', async ()=>{
+          const subId = btn.getAttribute('data-subid');
+          const hasProducts = state.products.some(p=>p.subcategoryId===subId);
+          if(hasProducts){ showToast('Impossibile eliminare: ci sono prodotti in questa sottocategoria.'); return; }
+          cat.subs = cat.subs.filter(s=>s.id!==subId);
+          await saveCategoryToSupabase(cat);
+          renderAll();
+          showToast('Sottocategoria eliminata.');
+        });
+      });
+
+      wrap.appendChild(row);
+    });
+  }
+
+  /* ===== ORDERS ===== */
+  async function loadAdminOrders(){
+    const wrap = document.getElementById('adminOrdersList');
+    wrap.innerHTML = '<div class="admin-empty-note">Caricamento...</div>';
+    try{
+      const { data, error } = await supabaseClient.from('orders').select('*').order('created_at', { ascending:false });
+      if(error) throw error;
+      if(!data || data.length === 0){ wrap.innerHTML = '<div class="admin-empty-note">Nessun ordine ricevuto ancora.</div>'; return; }
+
+      wrap.innerHTML = '';
+      data.forEach(order=>{
+        const d = new Date(order.created_at);
+        const dateStr = d.toLocaleDateString('it-IT', { day:'2-digit', month:'short', year:'numeric', hour:'2-digit', minute:'2-digit' });
+        const itemsText = (order.items || []).map(i => `${i.quantity}× ${i.description}`).join(', ');
+        const addr = order.shipping_address;
+        const addressHtml = addr ? `
+          <div class="admin-order-address">
+            <div class="admin-order-address-label">Indirizzo di spedizione</div>
+            ${escapeHtml(addr.line1 || '')}${addr.line2 ? ', ' + escapeHtml(addr.line2) : ''}<br>
+            ${escapeHtml(addr.postal_code || '')} ${escapeHtml(addr.city || '')}${addr.state ? ' (' + escapeHtml(addr.state) + ')' : ''}<br>
+            ${escapeHtml(addr.country || '')}
+          </div>` : '';
+
+        const card = document.createElement('div');
+        card.className = 'admin-order-card';
+        card.innerHTML = `
+          <div class="admin-order-top">
+            <div>
+              <div class="admin-order-customer">${escapeHtml(order.customer_name || 'Cliente sconosciuto')}</div>
+              <div class="admin-order-email">${escapeHtml(order.customer_email || '')}${order.customer_phone ? ' · ' + escapeHtml(order.customer_phone) : ''}</div>
+            </div>
+            <div class="admin-order-meta">${dateStr}<br><span class="order-status">${escapeHtml(order.status || 'pending')}</span></div>
+          </div>
+          ${addressHtml}
+          <div class="admin-order-items">${escapeHtml(itemsText)}</div>
+          <div class="admin-order-total">€ ${Number(order.amount_total).toFixed(2)}</div>`;
+        wrap.appendChild(card);
+      });
+    }catch(e){
+      console.error('Errore caricamento ordini admin:', e);
+      wrap.innerHTML = '<div class="admin-empty-note">Errore nel caricamento — verifica di avere i permessi admin.</div>';
+    }
+  }
+
+  /* ===== SITE SETTINGS ===== */
+  async function loadSiteSettings(){
+    try{
+      const { data, error } = await supabaseClient.from('site_settings').select('*').eq('id', 1).single();
+      if(error) throw error;
+      document.getElementById('siteContactEmail').value = data.contact_email || '';
+      document.getElementById('siteContactPhone').value = data.contact_phone || '';
+      document.getElementById('siteStoreAddress').value = data.store_address || '';
+      document.getElementById('siteTerms').value = data.terms_text || '';
+      document.getElementById('sitePrivacy').value = data.privacy_text || '';
+      document.getElementById('siteReturns').value = data.returns_text || '';
+    }catch(e){
+      console.error('Errore caricamento impostazioni sito:', e);
+    }
+  }
+
+  document.getElementById('saveContactBtn').addEventListener('click', async ()=>{
+    const errorEl = document.getElementById('contactSettingsError');
+    errorEl.textContent = '';
+    const { error } = await supabaseClient.from('site_settings').update({
+      contact_email: document.getElementById('siteContactEmail').value.trim(),
+      contact_phone: document.getElementById('siteContactPhone').value.trim(),
+      store_address: document.getElementById('siteStoreAddress').value.trim(),
+    }).eq('id', 1);
+    if(error){ errorEl.textContent = 'Errore: ' + error.message; return; }
+    showToast('Contatti salvati.');
+  });
+
+  document.getElementById('saveLegalBtn').addEventListener('click', async ()=>{
+    const errorEl = document.getElementById('legalSettingsError');
+    errorEl.textContent = '';
+    const { error } = await supabaseClient.from('site_settings').update({
+      terms_text: document.getElementById('siteTerms').value,
+      privacy_text: document.getElementById('sitePrivacy').value,
+      returns_text: document.getElementById('siteReturns').value,
+    }).eq('id', 1);
+    if(error){ errorEl.textContent = 'Errore: ' + error.message; return; }
+    showToast('Testi legali salvati.');
+  });
+
+  document.querySelectorAll('.admin-tab').forEach(tab=>{
+    tab.addEventListener('click', ()=>{
+      document.querySelectorAll('.admin-tab').forEach(t=>t.classList.remove('active'));
+      document.querySelectorAll('.admin-section').forEach(s=>s.classList.remove('active'));
+      tab.classList.add('active');
+      document.getElementById(tab.dataset.tab).classList.add('active');
+    });
+  });
+
+  (async function(){
+    await initSharedUI();
+    checkAdminAccess();
+  })();
+</script>
+
+</body>
+</html>

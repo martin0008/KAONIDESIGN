@@ -1,0 +1,245 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KAONI DESIGN</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<link rel="stylesheet" href="/assets/site.css">
+<style>
+  .red-title{ font-family:'Archivo Black', sans-serif; color:var(--red-bright); text-transform:uppercase; }
+
+  /* ===== CLOCK INTRO ===== */
+  .clock-intro{
+    position:fixed; inset:0; z-index:1000; background:var(--bg);
+    display:flex; align-items:center; justify-content:center;
+    animation:clockFadeOut 0.6s ease forwards; animation-delay:2.0s;
+  }
+  @keyframes clockFadeOut{ to{ opacity:0; visibility:hidden; pointer-events:none; } }
+  .digital-clock-intro{
+    font-family:'JetBrains Mono', monospace; font-weight:500; font-size:clamp(2.8rem, 12vw, 8rem);
+    letter-spacing:0.04em; color:var(--text); font-variant-numeric:tabular-nums; display:flex; align-items:baseline;
+  }
+  .digital-clock-intro .colon{ color:var(--red-bright); animation:colonBlink 0.5s steps(1) infinite; padding:0 0.05em; }
+  @keyframes colonBlink{ 50%{ opacity:0.15; } }
+  @media (prefers-reduced-motion: reduce){ .clock-intro{ animation:none; opacity:0; visibility:hidden; pointer-events:none; } }
+
+  /* ===== HERO ===== */
+  .hero{
+    position:relative; min-height:100vh; display:flex; flex-direction:column; justify-content:center;
+    padding:140px 40px 80px; max-width:1600px; margin:0 auto; overflow:hidden;
+  }
+  .hero-eyebrow{ font-size:12px; color:var(--red-bright); margin-bottom:24px; display:flex; align-items:center; gap:12px; }
+  .hero-eyebrow::before{ content:''; width:32px; height:1px; background:var(--red-bright); }
+  .live-clock{ color:var(--text-dim); letter-spacing:0.12em; font-variant-numeric:tabular-nums; }
+
+  .hero-title{
+    font-family:'Archivo Black', sans-serif; font-size:clamp(2.6rem, 11vw, 9.5rem);
+    line-height:0.9; letter-spacing:-0.01em; text-transform:uppercase; margin-left:-2px;
+  }
+  .hero-title .line{ display:block; overflow:hidden; }
+  .hero-title .line span{ display:inline-block; transform:translateY(110%); animation:riseUp 0.9s cubic-bezier(.19,1,.22,1) forwards; animation-delay:2.2s; }
+  .hero-title .line:nth-child(2) span{ animation-delay:2.3s; }
+  .hero-title .line:nth-child(3) span{ animation-delay:2.4s; color:var(--red-bright); }
+  @keyframes riseUp{ to{ transform:translateY(0); } }
+  @media (prefers-reduced-motion: reduce){ .hero-title .line span{ animation:none; transform:translateY(0); } }
+
+  .hero-sub-row{ display:flex; justify-content:space-between; align-items:flex-end; margin-top:48px; gap:40px; flex-wrap:wrap; }
+  .hero-desc{ max-width:420px; color:var(--text-dim); font-size:15px; line-height:1.7; }
+  .hero-cta{
+    display:inline-flex; align-items:center; gap:14px; background:var(--red-bright); color:var(--white);
+    font-weight:700; font-size:13px; letter-spacing:0.05em; text-transform:uppercase;
+    padding:18px 30px; white-space:nowrap; transition:all .25s ease; border:1px solid var(--red-bright);
+  }
+  .hero-cta:hover{ background:transparent; color:var(--red-bright); }
+  .hero-arrow{ font-size:16px; transition:transform .25s ease; }
+  .hero-cta:hover .hero-arrow{ transform:translateX(4px); }
+
+  /* ===== MANIFESTO ===== */
+  .manifesto{ padding:120px 40px; max-width:1600px; margin:0 auto; border-top:1px solid var(--line); }
+  .manifesto-tag{ font-size:12px; color:var(--text-dim); margin-bottom:40px; }
+  .manifesto-tag .num{ color:var(--red-bright); }
+  .manifesto-grid{ display:grid; grid-template-columns:1fr 1fr; gap:60px; align-items:start; }
+  .manifesto-statement{ font-family:'Archivo Black', sans-serif; font-size:clamp(1.7rem, 3.6vw, 3.2rem); line-height:1.15; text-transform:uppercase; color:var(--text); }
+  .manifesto-statement em{ font-style:normal; color:var(--red-bright); }
+  .manifesto-body{ padding-top:16px; }
+  .manifesto-body p{ color:var(--text-dim); font-size:16px; line-height:1.85; margin-bottom:24px; }
+  .manifesto-body p:last-child{ margin-bottom:0; }
+  .manifesto-body strong{ color:var(--text); font-weight:600; }
+
+  /* ===== PILLARS ===== */
+  .pillars{ padding:80px 40px 120px; max-width:1600px; margin:0 auto; border-top:1px solid var(--line); }
+  .pillars-title{ font-family:'Archivo Black', sans-serif; font-size:clamp(1.8rem, 4vw, 3rem); text-transform:uppercase; line-height:1; margin-bottom:50px; }
+  .pillars-grid{ display:grid; grid-template-columns:repeat(3, 1fr); gap:1px; background:var(--line); border:1px solid var(--line); }
+  .pillar{ background:var(--bg); padding:40px 32px; transition:background .3s ease; }
+  .pillar:hover{ background:var(--surface); }
+  .pillar-icon{ width:38px; height:38px; margin-bottom:26px; color:var(--red-bright); }
+  .pillar-title{ font-family:'Archivo Black', sans-serif; font-size:1.25rem; text-transform:uppercase; margin-bottom:14px; color:var(--text); }
+  .pillar-text{ color:var(--text-dim); font-size:14px; line-height:1.7; }
+
+  /* ===== CTA STRIP ===== */
+  .cta-strip{ border-top:1px solid var(--line); padding:100px 40px; text-align:center; }
+  .cta-strip-title{ font-family:'Archivo Black', sans-serif; font-size:clamp(2rem, 6vw, 5rem); text-transform:uppercase; line-height:1; margin-bottom:36px; color:var(--text); }
+  .cta-strip-title span{ color:var(--red-bright); }
+  .cta-btn-group{ display:flex; justify-content:center; gap:16px; flex-wrap:wrap; }
+
+  /* ===== FOOTER ===== */
+  footer{ border-top:1px solid var(--line); padding:60px 40px 30px; max-width:1600px; margin:0 auto; }
+  .footer-grid{ display:grid; grid-template-columns:1.4fr 1fr 1fr 1fr; gap:40px; margin-bottom:50px; }
+  .footer-logo-img{ height:56px; width:auto; margin-bottom:16px; }
+  .footer-desc{ color:var(--text-dim); font-size:13px; line-height:1.7; max-width:280px; }
+  .footer-col-title{ font-size:12px; letter-spacing:0.08em; text-transform:uppercase; color:var(--text-dim); margin-bottom:20px; }
+  .footer-col a{ display:block; font-size:13px; color:var(--text); margin-bottom:12px; transition:color .2s ease; width:fit-content; }
+  .footer-col a:hover{ color:var(--red-bright); }
+  .footer-bottom{ display:flex; justify-content:space-between; align-items:center; padding-top:26px; border-top:1px solid var(--line); font-size:11px; color:var(--text-dim); flex-wrap:wrap; gap:12px; }
+
+  @media (max-width:900px){
+    .manifesto-grid{ grid-template-columns:1fr; gap:30px; }
+    .pillars-grid{ grid-template-columns:1fr; }
+    .footer-grid{ grid-template-columns:1fr 1fr; }
+    .hero{ padding:120px 24px 60px; }
+    .manifesto, .pillars, .cta-strip, footer{ padding-left:24px; padding-right:24px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="clock-intro" id="clockIntro" aria-hidden="true">
+  <div class="digital-clock-intro" id="digitalClockIntro">
+    <span id="dcHours">00</span><span class="colon">:</span><span id="dcMinutes">00</span><span class="colon">:</span><span id="dcSeconds">00</span>
+  </div>
+</div>
+
+<div id="site-header-slot"></div>
+
+<section class="hero">
+  <div class="hero-eyebrow mono">Kaoni Design <span class="live-clock" id="liveClock">00:00:00</span></div>
+  <h1 class="hero-title">
+    <span class="line"><span>Elegance</span></span>
+    <span class="line"><span>In</span></span>
+    <span class="line accent-line"><span>Motion.</span></span>
+  </h1>
+  <div class="hero-sub-row">
+    <p class="hero-desc">Un brand nato dalla voglia di costruire qualcosa di proprio. Eleganza e sportività nello stesso capo, per chi non vuole scegliere.</p>
+    <a href="/collezione.html" class="hero-cta">Scopri il progetto <span class="hero-arrow">→</span></a>
+  </div>
+</section>
+
+<section class="manifesto" id="storia">
+  <div class="manifesto-tag mono"><span class="num">01</span> — La storia</div>
+  <div class="manifesto-grid">
+    <div class="manifesto-statement">Nato dalla voglia di avere <em>qualcosa di nostro.</em></div>
+    <div class="manifesto-body">
+      <p>Kaoni Design nasce da un gruppo di ragazzi che a <strong>soli 18 anni</strong> ha deciso di smettere di aspettare e iniziare a costruire. Non un'idea presa in prestito, ma un progetto pensato, disegnato e portato avanti da zero.</p>
+      <p>Il nome racchiude un'idea semplice: portare <strong>eleganza e sportività</strong> nello stesso spazio, senza che una escluda l'altra. Un concetto che accompagna chi lo indossa, capo dopo capo, stagione dopo stagione.</p>
+    </div>
+  </div>
+</section>
+
+<section class="pillars">
+  <div class="pillars-title">Il concetto</div>
+  <div class="pillars-grid">
+    <div class="pillar">
+      <svg class="pillar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 3h12l4 6-10 12L2 9Z"/><path d="M11 3 8 9l4 12 4-12-3-6"/><path d="M2 9h20"/></svg>
+      <div class="pillar-title">Eleganza</div>
+      <div class="pillar-text">Linee pulite e capi pensati per durare oltre la stagione, non per la moda del momento.</div>
+    </div>
+    <div class="pillar">
+      <svg class="pillar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M22 12h-4l-3 9L9 3l-3 9H2"/></svg>
+      <div class="pillar-title">Sportività</div>
+      <div class="pillar-text">Materiali e vestibilità pensati per il movimento, senza rinunciare al carattere.</div>
+    </div>
+    <div class="pillar">
+      <svg class="pillar-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+      <div class="pillar-title">Identità</div>
+      <div class="pillar-text">Un progetto indipendente, costruito da chi lo indossa per chi vuole distinguersi.</div>
+    </div>
+  </div>
+</section>
+
+<section class="cta-strip">
+  <div class="cta-strip-title">Fai parte del <span>progetto.</span></div>
+  <div class="cta-btn-group">
+    <a href="/collezione.html?cat=uomo" class="btn btn-primary">Uomo</a>
+    <a href="/collezione.html?cat=donna" class="btn btn-primary">Donna</a>
+    <a href="/collezione.html?cat=kids" class="btn btn-outline">Kids</a>
+  </div>
+</section>
+
+<footer>
+  <div class="footer-grid">
+    <div>
+      <img src="/assets/kaoni-logo.png" alt="Kaoni Design" class="footer-logo-img">
+      <p class="footer-desc">Eleganza e sportività nello stesso concetto. Un brand indipendente nato per chi non vuole scegliere.</p>
+    </div>
+    <div class="footer-col">
+      <div class="footer-col-title">Negozio</div>
+      <a href="/collezione.html?cat=uomo">Uomo</a>
+      <a href="/collezione.html?cat=donna">Donna</a>
+      <a href="/collezione.html?cat=kids">Kids</a>
+    </div>
+    <div class="footer-col">
+      <div class="footer-col-title">Assistenza</div>
+      <a href="/account.html">Account</a>
+      <a href="/account.html">Ordini</a>
+      <a href="/legale.html">Termini &amp; Privacy</a>
+    </div>
+    <div class="footer-col">
+      <div class="footer-col-title">Brand</div>
+      <a href="#storia">La nostra storia</a>
+    </div>
+  </div>
+  <div class="footer-bottom">
+    <span>© 2026 Kaoni Design. Tutti i diritti riservati.</span>
+    <span class="mono">kaonidesign.netlify.app</span>
+  </div>
+</footer>
+
+<div id="site-cart-slot"></div>
+<div class="toast" id="toast"></div>
+
+<script src="/assets/site.js"></script>
+<script>
+  function playClockIntro(){
+    const hEl = document.getElementById('dcHours');
+    const mEl = document.getElementById('dcMinutes');
+    const sEl = document.getElementById('dcSeconds');
+    if(!hEl || !mEl || !sEl) return;
+    const startTime = performance.now();
+    const rapidDuration = 1500;
+    function frame(now){
+      const elapsed = now - startTime;
+      if(elapsed < rapidDuration){
+        const fakeTotalSeconds = Math.floor(elapsed * 55);
+        hEl.textContent = String(Math.floor(fakeTotalSeconds / 3600) % 24).padStart(2,'0');
+        mEl.textContent = String(Math.floor((fakeTotalSeconds % 3600) / 60)).padStart(2,'0');
+        sEl.textContent = String(fakeTotalSeconds % 60).padStart(2,'0');
+        requestAnimationFrame(frame);
+      } else {
+        const now2 = new Date();
+        hEl.textContent = String(now2.getHours()).padStart(2,'0');
+        mEl.textContent = String(now2.getMinutes()).padStart(2,'0');
+        sEl.textContent = String(now2.getSeconds()).padStart(2,'0');
+      }
+    }
+    requestAnimationFrame(frame);
+  }
+  playClockIntro();
+
+  function tickClock(){
+    const el = document.getElementById('liveClock');
+    if(!el) return;
+    const now = new Date();
+    el.textContent = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}:${String(now.getSeconds()).padStart(2,'0')}`;
+  }
+  tickClock();
+  setInterval(tickClock, 1000);
+
+  initSharedUI();
+</script>
+
+</body>
+</html>
