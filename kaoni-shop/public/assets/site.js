@@ -364,6 +364,23 @@ function setupAdminSecretAccess(){
 }
 
 // ============================================
+// TRADUZIONE (Google Translate — copre tutte le lingue automaticamente)
+// ============================================
+function loadGoogleTranslate(){
+  if(window.google && window.google.translate){ return; }
+  window.googleTranslateElementInit = function(){
+    new google.translate.TranslateElement({
+      pageLanguage: 'it',
+      autoDisplay: false,
+      layout: google.translate.TranslateElement.InlineLayout.SIMPLE
+    }, 'google_translate_element');
+  };
+  const script = document.createElement('script');
+  script.src = 'https://translate.google.com/translate_a/element.js?cb=googleTranslateElementInit';
+  document.body.appendChild(script);
+}
+
+// ============================================
 // INIZIALIZZAZIONE COMUNE — da chiamare in ogni pagina dopo includePartials()
 // ============================================
 async function initSharedUI(){
@@ -373,4 +390,5 @@ async function initSharedUI(){
   setupCartHandlers();
   setupAdminSecretAccess();
   updateAccountNavLabel();
+  loadGoogleTranslate();
 }

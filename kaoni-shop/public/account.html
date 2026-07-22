@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>Il tuo account — Kaoni Design</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
-<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&family=Playfair+Display:wght@700&family=Bebas+Neue&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
 <link rel="stylesheet" href="/assets/site.css">
 <style>
@@ -32,6 +32,42 @@
   .account-subtab.active{ border-color:var(--red-bright); color:var(--red-bright); }
 
   .account-section-title{ font-size:12px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-dim); margin:30px 0 14px; }
+
+  .settings-card{
+    background:var(--surface); border:1px solid var(--line); padding:24px; margin-bottom:18px;
+  }
+  .settings-card-title{
+    display:flex; align-items:center; gap:10px; font-family:'Archivo Black', sans-serif;
+    text-transform:uppercase; font-size:14px; margin-bottom:20px; color:var(--text);
+  }
+  .settings-card-title svg{ width:20px; height:20px; color:var(--red-bright); flex-shrink:0; }
+  .settings-hint{ font-size:12px; color:var(--text-dim); margin-bottom:16px; line-height:1.6; }
+  .settings-divider{ height:1px; background:var(--line); margin:24px 0; }
+
+  .settings-preview{
+    background:var(--surface-2); border:1px solid var(--line); padding:16px; margin-bottom:16px;
+    font-size:18px; text-align:center;
+  }
+  .name-font-default{ font-family:'Inter', sans-serif; font-weight:600; }
+  .name-font-archivo{ font-family:'Archivo Black', sans-serif; text-transform:uppercase; }
+  .name-font-mono{ font-family:'JetBrains Mono', monospace; letter-spacing:0.05em; }
+  .name-font-playfair{ font-family:'Playfair Display', serif; font-style:italic; }
+  .name-font-bebas{ font-family:'Bebas Neue', sans-serif; letter-spacing:0.03em; font-size:22px; }
+
+  .toggle-row{
+    display:flex; justify-content:space-between; align-items:center; gap:16px;
+    font-size:13px; color:var(--text); margin-bottom:20px; cursor:pointer;
+  }
+  .toggle-row input[type="checkbox"]{
+    width:40px; height:22px; appearance:none; background:var(--surface-2); border:1px solid var(--line);
+    border-radius:20px; position:relative; cursor:pointer; flex-shrink:0; transition:background .2s ease;
+  }
+  .toggle-row input[type="checkbox"]::before{
+    content:''; position:absolute; top:2px; left:2px; width:16px; height:16px; border-radius:50%;
+    background:var(--text-dim); transition:transform .2s ease, background .2s ease;
+  }
+  .toggle-row input[type="checkbox"]:checked{ border-color:var(--red-bright); }
+  .toggle-row input[type="checkbox"]:checked::before{ transform:translateX(18px); background:var(--red-bright); }
 
   .order-item{ background:var(--surface-2); border:1px solid var(--line); padding:14px 16px; margin-bottom:10px; font-size:13px; }
   .order-item .order-date{ color:var(--text-dim); font-size:11px; margin-bottom:6px; }
@@ -103,24 +139,106 @@
     </div>
 
     <div id="settingsSubview" style="display:none;">
-      <div class="form-field">
-        <label>Foto profilo</label>
-        <input type="file" id="avatarInput" accept="image/*">
+      <div class="settings-card">
+        <div class="settings-card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.5-7 8-7s8 3 8 7"/></svg>
+          Profilo
+        </div>
+        <div class="form-field">
+          <label>Foto profilo</label>
+          <input type="file" id="avatarInput" accept="image/*">
+        </div>
+        <div class="form-field">
+          <label>Nome visualizzato</label>
+          <input type="text" id="settingsName">
+        </div>
+        <div class="form-field">
+          <label>Numero di telefono</label>
+          <input type="tel" id="settingsPhone" placeholder="+41 79 000 00 00">
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label>Colore del tuo nome</label>
+            <input type="color" id="settingsNameColor" value="#ff3b3b" style="height:44px; padding:4px; cursor:pointer;">
+          </div>
+          <div class="form-field">
+            <label>Font del tuo nome</label>
+            <select id="settingsNameFont">
+              <option value="default">Predefinito</option>
+              <option value="archivo">Archivo Black — Bold</option>
+              <option value="mono">JetBrains Mono — Tech</option>
+              <option value="playfair">Playfair Display — Elegante</option>
+              <option value="bebas">Bebas Neue — Street</option>
+            </select>
+          </div>
+        </div>
+        <div class="settings-preview" id="namePreview">Ciao, Anteprima.</div>
+        <button class="save-btn cart-checkout-btn" id="saveProfileBtn">Salva profilo</button>
+        <div class="cart-error" id="settingsError"></div>
       </div>
-      <div class="form-field">
-        <label>Nome visualizzato</label>
-        <input type="text" id="settingsName">
-      </div>
-      <button class="save-btn cart-checkout-btn" id="saveProfileBtn">Salva modifiche</button>
-      <div class="cart-error" id="settingsError"></div>
 
-      <div class="account-section-title">Sicurezza</div>
-      <div class="form-field">
-        <label>Nuova password</label>
-        <input type="password" id="newPasswordInput" placeholder="Lascia vuoto per non cambiarla" autocomplete="new-password">
+      <div class="settings-card">
+        <div class="settings-card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 2 2 7l10 5 10-5-10-5Z"/><path d="M2 17l10 5 10-5"/><path d="M2 12l10 5 10-5"/></svg>
+          Indirizzo predefinito
+        </div>
+        <p class="settings-hint">Usato per pre-compilare la spedizione ai tuoi prossimi acquisti.</p>
+        <div class="form-field">
+          <label>Indirizzo</label>
+          <input type="text" id="settingsAddressLine1" placeholder="Via, numero civico">
+        </div>
+        <div class="form-row">
+          <div class="form-field">
+            <label>Città</label>
+            <input type="text" id="settingsAddressCity" placeholder="Lugano">
+          </div>
+          <div class="form-field">
+            <label>CAP</label>
+            <input type="text" id="settingsAddressZip" placeholder="6900">
+          </div>
+        </div>
+        <div class="form-field">
+          <label>Paese</label>
+          <input type="text" id="settingsAddressCountry" placeholder="Svizzera">
+        </div>
+        <button class="save-btn cart-checkout-btn" id="saveAddressBtn">Salva indirizzo</button>
+        <div class="cart-error" id="addressError"></div>
       </div>
-      <button class="save-btn cart-checkout-btn" id="savePasswordBtn">Aggiorna password</button>
-      <div class="cart-error" id="passwordError"></div>
+
+      <div class="settings-card">
+        <div class="settings-card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><rect x="3" y="5" width="18" height="14" rx="2"/><path d="M3 8h18"/></svg>
+          Email e password
+        </div>
+        <div class="form-field">
+          <label>Email attuale</label>
+          <input type="email" id="settingsEmail">
+        </div>
+        <button class="save-btn cart-checkout-btn" id="saveEmailBtn">Aggiorna email</button>
+        <div class="cart-error" id="emailError"></div>
+
+        <div class="settings-divider"></div>
+
+        <div class="form-field">
+          <label>Nuova password</label>
+          <input type="password" id="newPasswordInput" placeholder="Lascia vuoto per non cambiarla" autocomplete="new-password">
+        </div>
+        <button class="save-btn cart-checkout-btn" id="savePasswordBtn">Aggiorna password</button>
+        <div class="cart-error" id="passwordError"></div>
+      </div>
+
+      <div class="settings-card">
+        <div class="settings-card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M12 22c5.5-2 8-6 8-11V5l-8-3-8 3v6c0 5 2.5 9 8 11Z"/></svg>
+          Preferenze
+        </div>
+        <label class="toggle-row">
+          <span>Ricevi email su nuovi drop e offerte</span>
+          <input type="checkbox" id="settingsNewsletter">
+        </label>
+        <button class="save-btn cart-checkout-btn" id="savePrefsBtn">Salva preferenze</button>
+        <div class="cart-error" id="prefsError"></div>
+      </div>
     </div>
 
     <button class="icon-btn" id="logoutBtn" style="margin-top:30px; width:100%;">Esci dall'account</button>
@@ -152,6 +270,23 @@
     });
   });
 
+  function applyNamePreview(color, font){
+    const preview = document.getElementById('namePreview');
+    const name = document.getElementById('settingsName').value.trim() || 'Anteprima';
+    preview.className = 'settings-preview name-font-' + font;
+    preview.innerHTML = `Ciao, <span style="color:${color}">${escapeHtml(name)}</span>.`;
+  }
+
+  document.getElementById('settingsNameColor').addEventListener('input', (e)=>{
+    applyNamePreview(e.target.value, document.getElementById('settingsNameFont').value);
+  });
+  document.getElementById('settingsNameFont').addEventListener('change', (e)=>{
+    applyNamePreview(document.getElementById('settingsNameColor').value, e.target.value);
+  });
+  document.getElementById('settingsName').addEventListener('input', ()=>{
+    applyNamePreview(document.getElementById('settingsNameColor').value, document.getElementById('settingsNameFont').value);
+  });
+
   async function refreshAccountPageView(){
     const authView = document.getElementById('authView');
     const accountView = document.getElementById('accountView');
@@ -171,14 +306,36 @@
 
       let displayName = '';
       let avatarUrl = '';
+      let profileData = null;
       try{
         const { data: profile } = await supabaseClient
-          .from('profiles').select('full_name, avatar_url').eq('id', session.user.id).single();
-        if(profile){ displayName = profile.full_name || ''; avatarUrl = profile.avatar_url || ''; }
+          .from('profiles').select('*').eq('id', session.user.id).single();
+        if(profile){
+          profileData = profile;
+          displayName = profile.full_name || '';
+          avatarUrl = profile.avatar_url || '';
+        }
       }catch(e){}
 
-      document.getElementById('accountGreeting').textContent = displayName ? `Ciao, ${displayName}.` : `Ciao, ${session.user.email}.`;
       document.getElementById('settingsName').value = displayName;
+      document.getElementById('settingsPhone').value = profileData ? (profileData.phone || '') : '';
+      document.getElementById('settingsAddressLine1').value = profileData ? (profileData.address_line1 || '') : '';
+      document.getElementById('settingsAddressCity').value = profileData ? (profileData.address_city || '') : '';
+      document.getElementById('settingsAddressZip').value = profileData ? (profileData.address_zip || '') : '';
+      document.getElementById('settingsAddressCountry').value = profileData ? (profileData.address_country || '') : '';
+      document.getElementById('settingsEmail').value = session.user.email || '';
+      document.getElementById('settingsNewsletter').checked = profileData ? !!profileData.newsletter_opt_in : false;
+
+      const nameColor = profileData ? (profileData.name_color || '#ff3b3b') : '#ff3b3b';
+      const nameFont = profileData ? (profileData.name_font || 'default') : 'default';
+      document.getElementById('settingsNameColor').value = nameColor;
+      document.getElementById('settingsNameFont').value = nameFont;
+      applyNamePreview(nameColor, nameFont);
+
+      const greetingEl = document.getElementById('accountGreeting');
+      greetingEl.className = 'account-greeting name-font-' + nameFont;
+      const nameSpan = displayName ? `<span style="color:${nameColor}">${escapeHtml(displayName)}</span>` : escapeHtml(session.user.email);
+      greetingEl.innerHTML = displayName ? `Ciao, ${nameSpan}.` : `Ciao, ${nameSpan}.`;
 
       const avatarImg = document.getElementById('accountAvatarImg');
       const avatarPlaceholder = document.getElementById('accountAvatarPlaceholder');
@@ -276,6 +433,7 @@
     const errorEl = document.getElementById('settingsError');
     errorEl.textContent = '';
     const newName = document.getElementById('settingsName').value.trim();
+    const newPhone = document.getElementById('settingsPhone').value.trim();
     const file = document.getElementById('avatarInput').files[0];
 
     const { data: { session } } = await supabaseClient.auth.getSession();
@@ -292,7 +450,11 @@
       avatarUrl = publicUrlData.publicUrl + '?t=' + Date.now();
     }
 
-    const updatePayload = { full_name: newName };
+    const updatePayload = {
+      full_name: newName, phone: newPhone,
+      name_color: document.getElementById('settingsNameColor').value,
+      name_font: document.getElementById('settingsNameFont').value
+    };
     if(avatarUrl) updatePayload.avatar_url = avatarUrl;
 
     const { error: profileError } = await supabaseClient.from('profiles').update(updatePayload).eq('id', session.user.id);
@@ -301,6 +463,47 @@
     await supabaseClient.auth.updateUser({ data: { full_name: newName } });
     showToast('Profilo aggiornato.');
     refreshAccountPageView();
+  });
+
+  document.getElementById('saveAddressBtn').addEventListener('click', async ()=>{
+    const errorEl = document.getElementById('addressError');
+    errorEl.textContent = '';
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if(!session){ errorEl.textContent = 'Sessione scaduta, accedi di nuovo.'; return; }
+
+    const payload = {
+      address_line1: document.getElementById('settingsAddressLine1').value.trim(),
+      address_city: document.getElementById('settingsAddressCity').value.trim(),
+      address_zip: document.getElementById('settingsAddressZip').value.trim(),
+      address_country: document.getElementById('settingsAddressCountry').value.trim(),
+    };
+
+    const { error } = await supabaseClient.from('profiles').update(payload).eq('id', session.user.id);
+    if(error){ errorEl.textContent = 'Errore nel salvataggio: ' + error.message; return; }
+    showToast('Indirizzo salvato.');
+  });
+
+  document.getElementById('saveEmailBtn').addEventListener('click', async ()=>{
+    const errorEl = document.getElementById('emailError');
+    errorEl.textContent = '';
+    const newEmail = document.getElementById('settingsEmail').value.trim();
+    if(!newEmail){ errorEl.textContent = 'Inserisci un\'email valida.'; return; }
+
+    const { error } = await supabaseClient.auth.updateUser({ email: newEmail });
+    if(error){ errorEl.textContent = error.message; return; }
+    showToast('Controlla la tua nuova casella email per confermare il cambio.');
+  });
+
+  document.getElementById('savePrefsBtn').addEventListener('click', async ()=>{
+    const errorEl = document.getElementById('prefsError');
+    errorEl.textContent = '';
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if(!session){ errorEl.textContent = 'Sessione scaduta, accedi di nuovo.'; return; }
+
+    const newsletterOptIn = document.getElementById('settingsNewsletter').checked;
+    const { error } = await supabaseClient.from('profiles').update({ newsletter_opt_in: newsletterOptIn }).eq('id', session.user.id);
+    if(error){ errorEl.textContent = 'Errore nel salvataggio: ' + error.message; return; }
+    showToast('Preferenze salvate.');
   });
 
   document.getElementById('savePasswordBtn').addEventListener('click', async ()=>{

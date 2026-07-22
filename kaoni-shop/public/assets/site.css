@@ -117,6 +117,20 @@ nav.main-menu{ display:flex; align-items:center; gap:36px; }
 }
 .menu-overlay.open{ opacity:1; visibility:visible; }
 
+/* ===== TRADUTTORE (Google Translate, ristilizzato) ===== */
+.translate-widget{ display:flex; align-items:center; }
+.translate-widget .goog-te-gadget{ font-family:'Inter', sans-serif !important; font-size:0 !important; color:transparent !important; }
+.translate-widget .goog-te-gadget > span > a{ display:none !important; }
+.translate-widget select.goog-te-combo{
+  background:var(--surface-2); color:var(--text-dim); border:1px solid var(--line);
+  font-size:12px; padding:6px 8px; font-family:'Inter', sans-serif; cursor:pointer;
+}
+body > .skiptranslate.goog-te-gadget-icon,
+.goog-te-banner-frame{ display:none !important; }
+body{ top:0 !important; }
+#goog-gt-tt, .goog-te-balloon-frame{ display:none !important; }
+.goog-text-highlight{ background:none !important; box-shadow:none !important; }
+
 /* ===== SEARCH (animato, icona -> input) ===== */
 .search-wrap{ display:flex; align-items:center; gap:6px; }
 .search-icon-btn{

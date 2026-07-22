@@ -75,6 +75,7 @@
       <button class="admin-tab active" data-tab="tab-products">Prodotti</button>
       <button class="admin-tab" data-tab="tab-categories">Categorie</button>
       <button class="admin-tab" data-tab="tab-orders">Ordini</button>
+      <button class="admin-tab" data-tab="tab-site">Sito</button>
     </div>
 
     <!-- PRODUCTS TAB -->
@@ -198,6 +199,47 @@
         <div id="adminOrdersList"><div class="admin-empty-note">Caricamento...</div></div>
       </div>
     </div>
+
+    <!-- SITE SETTINGS TAB -->
+    <div class="admin-section" id="tab-site">
+      <div class="admin-card">
+        <h3>Informazioni di contatto</h3>
+        <div class="form-row">
+          <div class="form-field">
+            <label>Email di contatto</label>
+            <input type="email" id="siteContactEmail" placeholder="info@kaonidesign.com">
+          </div>
+          <div class="form-field">
+            <label>Telefono</label>
+            <input type="text" id="siteContactPhone" placeholder="+41 79 000 00 00">
+          </div>
+        </div>
+        <div class="form-field">
+          <label>Indirizzo negozio</label>
+          <input type="text" id="siteStoreAddress" placeholder="Via Esempio 1, 6900 Lugano">
+        </div>
+        <button class="save-btn" id="saveContactBtn">Salva contatti</button>
+        <div class="cart-error" id="contactSettingsError"></div>
+      </div>
+
+      <div class="admin-card">
+        <h3>Testi legali</h3>
+        <div class="form-field">
+          <label>Termini e condizioni</label>
+          <textarea id="siteTerms" rows="6" placeholder="Scrivi qui i termini e condizioni..."></textarea>
+        </div>
+        <div class="form-field">
+          <label>Privacy policy</label>
+          <textarea id="sitePrivacy" rows="6" placeholder="Scrivi qui l'informativa privacy..."></textarea>
+        </div>
+        <div class="form-field">
+          <label>Politica di reso</label>
+          <textarea id="siteReturns" rows="6" placeholder="Scrivi qui la politica di reso..."></textarea>
+        </div>
+        <button class="save-btn" id="saveLegalBtn">Salva testi legali</button>
+        <div class="cart-error" id="legalSettingsError"></div>
+      </div>
+    </div>
   </div>
 </div>
 
@@ -242,6 +284,7 @@
     await loadAdminData();
     renderAll();
     loadAdminOrders();
+    loadSiteSettings();
   }
 
   async function loadAdminData(){
@@ -493,6 +536,46 @@
       wrap.innerHTML = '<div class="admin-empty-note">Errore nel caricamento — verifica di avere i permessi admin.</div>';
     }
   }
+
+  /* ===== SITE SETTINGS ===== */
+  async function loadSiteSettings(){
+    try{
+      const { data, error } = await supabaseClient.from('site_settings').select('*').eq('id', 1).single();
+      if(error) throw error;
+      document.getElementById('siteContactEmail').value = data.contact_email || '';
+      document.getElementById('siteContactPhone').value = data.contact_phone || '';
+      document.getElementById('siteStoreAddress').value = data.store_address || '';
+      document.getElementById('siteTerms').value = data.terms_text || '';
+      document.getElementById('sitePrivacy').value = data.privacy_text || '';
+      document.getElementById('siteReturns').value = data.returns_text || '';
+    }catch(e){
+      console.error('Errore caricamento impostazioni sito:', e);
+    }
+  }
+
+  document.getElementById('saveContactBtn').addEventListener('click', async ()=>{
+    const errorEl = document.getElementById('contactSettingsError');
+    errorEl.textContent = '';
+    const { error } = await supabaseClient.from('site_settings').update({
+      contact_email: document.getElementById('siteContactEmail').value.trim(),
+      contact_phone: document.getElementById('siteContactPhone').value.trim(),
+      store_address: document.getElementById('siteStoreAddress').value.trim(),
+    }).eq('id', 1);
+    if(error){ errorEl.textContent = 'Errore: ' + error.message; return; }
+    showToast('Contatti salvati.');
+  });
+
+  document.getElementById('saveLegalBtn').addEventListener('click', async ()=>{
+    const errorEl = document.getElementById('legalSettingsError');
+    errorEl.textContent = '';
+    const { error } = await supabaseClient.from('site_settings').update({
+      terms_text: document.getElementById('siteTerms').value,
+      privacy_text: document.getElementById('sitePrivacy').value,
+      returns_text: document.getElementById('siteReturns').value,
+    }).eq('id', 1);
+    if(error){ errorEl.textContent = 'Errore: ' + error.message; return; }
+    showToast('Testi legali salvati.');
+  });
 
   document.querySelectorAll('.admin-tab').forEach(tab=>{
     tab.addEventListener('click', ()=>{
