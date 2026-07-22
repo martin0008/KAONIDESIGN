@@ -411,6 +411,23 @@
   }
   .product-add-btn:hover{ background:transparent; color:var(--red-bright); }
 
+  /* ===== ACCOUNT / AUTH ===== */
+  .auth-tabs{ display:flex; gap:8px; margin-bottom:24px; }
+  .auth-tab{
+    flex:1; background:none; border:1px solid var(--line); color:var(--text-dim);
+    padding:12px; font-size:12px; font-weight:700; letter-spacing:0.05em; text-transform:uppercase;
+  }
+  .auth-tab.active{ border-color:var(--red-bright); color:var(--red-bright); }
+  .auth-form .form-field{ margin-bottom:16px; }
+
+  .account-greeting{ font-size:14px; color:var(--text); margin-bottom:24px; }
+  .account-section-title{ font-size:12px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-dim); margin-bottom:14px; }
+
+  .order-item{ background:var(--surface-2); border:1px solid var(--line); padding:14px 16px; margin-bottom:10px; font-size:13px; }
+  .order-item .order-date{ color:var(--text-dim); font-size:11px; margin-bottom:6px; }
+  .order-item .order-total{ font-weight:700; margin-top:6px; }
+  .order-status{ display:inline-block; font-size:10px; text-transform:uppercase; padding:3px 8px; border:1px solid var(--red-bright); color:var(--red-bright); margin-top:6px; }
+
   .toast{
     position:fixed; bottom:30px; left:50%; transform:translateX(-50%) translateY(20px);
     background:var(--surface); border:1px solid var(--red-bright); color:var(--text);
@@ -472,7 +489,7 @@
 
     <div class="nav-actions">
       <a href="#" class="desktop-only">Aiuto</a>
-      <a href="#" class="desktop-only">Ordini</a>
+      <button id="accountOpenBtn" class="desktop-only">Account</button>
       <button id="cartOpenBtn">Carrello <span class="cart-count" id="cartCount">0</span></button>
       <button class="burger" id="burgerBtn" aria-label="Apri menu"><span></span><span></span><span></span></button>
     </div>
@@ -675,6 +692,10 @@
           <input type="text" id="pImageUrl" placeholder="https://...">
           <img id="pImgPreview" class="img-preview" style="display:none;">
         </div>
+        <div class="form-field" style="display:flex; align-items:center; gap:10px;">
+          <input type="checkbox" id="pIsSecret" style="width:auto;">
+          <label style="margin:0;" for="pIsSecret">Prodotto esclusivo — visibile solo nella pagina drop segreto</label>
+        </div>
         <button class="save-btn" id="pSaveBtn">Aggiungi prodotto</button>
       </div>
 
@@ -739,6 +760,62 @@
   </div>
 </div>
 
+<div class="cart-overlay" id="accountOverlay"></div>
+<div class="cart-drawer" id="accountDrawer">
+  <div class="cart-drawer-header">
+    <h2 id="accountTitle">Il tuo account</h2>
+    <button id="accountCloseBtn" class="cart-close-btn" aria-label="Chiudi account">✕</button>
+  </div>
+
+  <div class="cart-items">
+    <!-- Vista: non loggato -->
+    <div id="authView">
+      <div class="auth-tabs">
+        <button class="auth-tab active" data-auth-tab="login">Accedi</button>
+        <button class="auth-tab" data-auth-tab="register">Registrati</button>
+      </div>
+
+      <div id="loginForm" class="auth-form">
+        <div class="form-field">
+          <label>Email</label>
+          <input type="email" id="loginEmail" autocomplete="email">
+        </div>
+        <div class="form-field">
+          <label>Password</label>
+          <input type="password" id="loginPassword" autocomplete="current-password">
+        </div>
+        <button class="save-btn cart-checkout-btn" id="loginSubmitBtn">Accedi</button>
+        <div class="cart-error" id="loginError"></div>
+      </div>
+
+      <div id="registerForm" class="auth-form" style="display:none;">
+        <div class="form-field">
+          <label>Nome</label>
+          <input type="text" id="registerName" autocomplete="name">
+        </div>
+        <div class="form-field">
+          <label>Email</label>
+          <input type="email" id="registerEmail" autocomplete="email">
+        </div>
+        <div class="form-field">
+          <label>Password</label>
+          <input type="password" id="registerPassword" autocomplete="new-password">
+        </div>
+        <button class="save-btn cart-checkout-btn" id="registerSubmitBtn">Crea account</button>
+        <div class="cart-error" id="registerError"></div>
+      </div>
+    </div>
+
+    <!-- Vista: loggato -->
+    <div id="accountView" style="display:none;">
+      <p class="account-greeting" id="accountGreeting"></p>
+      <div class="account-section-title">I tuoi ordini</div>
+      <div id="myOrdersList"><div class="cart-empty">Caricamento...</div></div>
+      <button class="icon-btn" id="logoutBtn" style="margin-top:20px; width:100%;">Esci dall'account</button>
+    </div>
+  </div>
+</div>
+
 <div class="toast" id="toast"></div>
 
 <script>
@@ -747,8 +824,8 @@
   // CONFIGURAZIONE SUPABASE — inserisci qui i tuoi valori
   // (li trovi in Supabase Dashboard → Project settings → API)
   // ============================================
-  const SUPABASE_URL = 'INSERISCI_QUI_LA_TUA_SUPABASE_URL';
-  const SUPABASE_ANON_KEY = 'INSERISCI_QUI_LA_TUA_SUPABASE_ANON_KEY';
+  const SUPABASE_URL = 'https://mcwkvozuzpyghihjylte.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_MONvzORVYZ1ri4QY0yt4bg_f4bkoLZN';
 
   let supabaseClient = null;
   let supabaseReady = false;
@@ -810,6 +887,7 @@
         id:p.id, title:p.title, price:p.price, categoryId:p.category_id, subcategoryId:p.subcategory_id || '',
         description:p.description||'', sizes:p.sizes||'', color:p.color||'', material:p.material||'',
         sku:p.sku||'', stock:p.stock||'', origin:p.origin||'', notes:p.notes||'', imageUrl:p.image_url||'',
+        isSecret: !!p.is_secret,
         createdAt: p.created_at
       }));
     }catch(e){
@@ -836,7 +914,8 @@
     const { error } = await supabaseClient.from('products').upsert({
       id:p.id, title:p.title, price:p.price, category_id:p.categoryId, subcategory_id:p.subcategoryId || null,
       description:p.description, sizes:p.sizes, color:p.color, material:p.material,
-      sku:p.sku, stock:p.stock, origin:p.origin, notes:p.notes, image_url:p.imageUrl
+      sku:p.sku, stock:p.stock, origin:p.origin, notes:p.notes, image_url:p.imageUrl,
+      is_secret: !!p.isSecret
     });
     if(error){ console.error(error); showToast('Errore nel salvataggio prodotto su Supabase.'); }
   }
@@ -895,9 +974,12 @@
     });
 
     const helpA = document.createElement('a'); helpA.href='#'; helpA.textContent='Aiuto';
-    const ordA = document.createElement('a'); ordA.href='#'; ordA.textContent='Ordini';
+    const accountBtnMobile = document.createElement('button');
+    accountBtnMobile.className = 'mobile-link';
+    accountBtnMobile.textContent = 'Account';
+    accountBtnMobile.addEventListener('click', openAccount);
     mobile.appendChild(helpA);
-    mobile.appendChild(ordA);
+    mobile.appendChild(accountBtnMobile);
   }
 
   /* ===== PRODUCT FILTERS + GRID ===== */
@@ -924,7 +1006,8 @@
   function renderProducts(){
     const grid = document.getElementById('productsGrid');
     grid.innerHTML = '';
-    const list = activeFilter==='all' ? state.products : state.products.filter(p=>p.categoryId===activeFilter);
+    const visibleProducts = state.products.filter(p=>!p.isSecret);
+    const list = activeFilter==='all' ? visibleProducts : visibleProducts.filter(p=>p.categoryId===activeFilter);
 
     if(list.length === 0){
       grid.innerHTML = '<div class="products-empty">Nessun prodotto ancora disponibile in questa categoria.<br>La prima collezione arriva presto.</div>';
@@ -1100,6 +1183,161 @@
     }
   });
 
+  /* ===== ACCOUNT / AUTENTICAZIONE CLIENTI ===== */
+  function openAccount(){
+    document.getElementById('accountDrawer').classList.add('open');
+    document.getElementById('accountOverlay').classList.add('open');
+    refreshAccountView();
+  }
+  function closeAccount(){
+    document.getElementById('accountDrawer').classList.remove('open');
+    document.getElementById('accountOverlay').classList.remove('open');
+  }
+
+  const accountOpenBtn = document.getElementById('accountOpenBtn');
+  if(accountOpenBtn) accountOpenBtn.addEventListener('click', openAccount);
+  document.getElementById('accountCloseBtn').addEventListener('click', closeAccount);
+  document.getElementById('accountOverlay').addEventListener('click', closeAccount);
+
+  // Cambio tra tab "Accedi" / "Registrati"
+  document.querySelectorAll('.auth-tab').forEach(tab=>{
+    tab.addEventListener('click', ()=>{
+      document.querySelectorAll('.auth-tab').forEach(t=>t.classList.remove('active'));
+      tab.classList.add('active');
+      const isLogin = tab.dataset.authTab === 'login';
+      document.getElementById('loginForm').style.display = isLogin ? 'block' : 'none';
+      document.getElementById('registerForm').style.display = isLogin ? 'none' : 'block';
+    });
+  });
+
+  async function refreshAccountView(){
+    const authView = document.getElementById('authView');
+    const accountView = document.getElementById('accountView');
+
+    if(!supabaseReady){
+      authView.innerHTML = '<div class="cart-empty">Account non disponibile: Supabase non è ancora configurato.</div>';
+      accountView.style.display = 'none';
+      authView.style.display = 'block';
+      return;
+    }
+
+    const { data: { session } } = await supabaseClient.auth.getSession();
+
+    if(session && session.user){
+      authView.style.display = 'none';
+      accountView.style.display = 'block';
+      const name = session.user.user_metadata && session.user.user_metadata.full_name;
+      document.getElementById('accountGreeting').textContent = name ? `Ciao, ${name}.` : `Ciao, ${session.user.email}.`;
+      loadMyOrders(session.user.email);
+    } else {
+      authView.style.display = 'block';
+      accountView.style.display = 'none';
+    }
+  }
+
+  async function loadMyOrders(email){
+    const wrap = document.getElementById('myOrdersList');
+    wrap.innerHTML = '<div class="cart-empty">Caricamento...</div>';
+    try{
+      const { data, error } = await supabaseClient
+        .from('orders')
+        .select('*')
+        .eq('customer_email', email)
+        .order('created_at', { ascending: false });
+      if(error) throw error;
+
+      if(!data || data.length === 0){
+        wrap.innerHTML = '<div class="cart-empty">Nessun ordine ancora effettuato.</div>';
+        return;
+      }
+
+      wrap.innerHTML = '';
+      data.forEach(order=>{
+        const d = new Date(order.created_at);
+        const dateStr = d.toLocaleDateString('it-IT', { day:'2-digit', month:'short', year:'numeric' });
+        const itemsText = (order.items || []).map(i => `${i.quantity}× ${i.description}`).join(', ');
+        const el = document.createElement('div');
+        el.className = 'order-item';
+        el.innerHTML = `
+          <div class="order-date">${dateStr}</div>
+          <div>${escapeHtml(itemsText)}</div>
+          <div class="order-total">€ ${Number(order.amount_total).toFixed(2)}</div>
+          <span class="order-status">${escapeHtml(order.status || 'pending')}</span>
+        `;
+        wrap.appendChild(el);
+      });
+    }catch(e){
+      console.error('Errore caricamento ordini:', e);
+      wrap.innerHTML = '<div class="cart-empty">Errore nel caricamento degli ordini.</div>';
+    }
+  }
+
+  document.getElementById('registerSubmitBtn').addEventListener('click', async ()=>{
+    const name = document.getElementById('registerName').value.trim();
+    const email = document.getElementById('registerEmail').value.trim();
+    const password = document.getElementById('registerPassword').value;
+    const errorEl = document.getElementById('registerError');
+    errorEl.textContent = '';
+
+    if(!email || !password){
+      errorEl.textContent = 'Inserisci email e password.';
+      return;
+    }
+    if(password.length < 6){
+      errorEl.textContent = 'La password deve avere almeno 6 caratteri.';
+      return;
+    }
+    if(!supabaseReady){
+      errorEl.textContent = 'Supabase non è configurato.';
+      return;
+    }
+
+    const { data, error } = await supabaseClient.auth.signUp({
+      email, password,
+      options: { data: { full_name: name } }
+    });
+
+    if(error){
+      errorEl.textContent = error.message;
+      return;
+    }
+
+    showToast('Account creato! Controlla la tua email per confermare.');
+    refreshAccountView();
+  });
+
+  document.getElementById('loginSubmitBtn').addEventListener('click', async ()=>{
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const errorEl = document.getElementById('loginError');
+    errorEl.textContent = '';
+
+    if(!email || !password){
+      errorEl.textContent = 'Inserisci email e password.';
+      return;
+    }
+    if(!supabaseReady){
+      errorEl.textContent = 'Supabase non è configurato.';
+      return;
+    }
+
+    const { data, error } = await supabaseClient.auth.signInWithPassword({ email, password });
+
+    if(error){
+      errorEl.textContent = 'Credenziali non valide.';
+      return;
+    }
+
+    showToast('Accesso effettuato.');
+    refreshAccountView();
+  });
+
+  document.getElementById('logoutBtn').addEventListener('click', async ()=>{
+    if(supabaseReady){ await supabaseClient.auth.signOut(); }
+    showToast('Disconnesso.');
+    refreshAccountView();
+  });
+
   /* ===== MOBILE MENU TOGGLE ===== */
   const burgerBtn = document.getElementById('burgerBtn');
   const mobileMenu = document.getElementById('mobileMenu');
@@ -1220,10 +1458,12 @@
       origin: document.getElementById('pOrigin').value.trim(),
       notes: document.getElementById('pNotes').value.trim(),
       imageUrl: document.getElementById('pImageUrl').value.trim(),
+      isSecret: document.getElementById('pIsSecret').checked,
       createdAt: Date.now()
     };
     state.products.unshift(product);
     await saveProductToSupabase(product);
+    document.getElementById('pIsSecret').checked = false;
     ['pTitle','pPrice','pDesc','pSizes','pColor','pMaterial','pSku','pStock','pOrigin','pNotes','pImageUrl'].forEach(id=>{
       document.getElementById(id).value = '';
     });
