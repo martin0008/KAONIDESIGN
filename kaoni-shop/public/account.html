@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Il tuo account — Kaoni Design</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo+Black&family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.js"></script>
+<link rel="stylesheet" href="/assets/site.css">
+<style>
+  .account-page{ max-width:480px; margin:0 auto; padding:160px 24px 100px; }
+  .account-page h1{ font-family:'Archivo Black', sans-serif; text-transform:uppercase; font-size:1.8rem; margin-bottom:36px; }
+  .account-page h1 span{ color:var(--red-bright); }
+
+  .auth-tabs{ display:flex; gap:8px; margin-bottom:24px; }
+  .auth-tab{
+    flex:1; background:none; border:1px solid var(--line); color:var(--text-dim);
+    padding:12px; font-size:12px; font-weight:700; letter-spacing:0.05em; text-transform:uppercase;
+  }
+  .auth-tab.active{ border-color:var(--red-bright); color:var(--red-bright); }
+
+  .account-greeting{ font-size:14px; color:var(--text); margin-bottom:0; }
+  .account-header-row{ display:flex; align-items:center; gap:14px; margin-bottom:24px; }
+  .account-avatar{ width:56px; height:56px; border-radius:50%; object-fit:cover; background:var(--surface-2); border:1px solid var(--line); flex-shrink:0; }
+  .account-avatar-placeholder{ display:flex; align-items:center; justify-content:center; color:var(--text-dim); font-size:22px; }
+
+  .account-subtab{
+    flex:1; background:none; border:1px solid var(--line); color:var(--text-dim);
+    padding:12px; font-size:12px; font-weight:700; letter-spacing:0.05em; text-transform:uppercase;
+  }
+  .account-subtab.active{ border-color:var(--red-bright); color:var(--red-bright); }
+
+  .account-section-title{ font-size:12px; letter-spacing:0.05em; text-transform:uppercase; color:var(--text-dim); margin:30px 0 14px; }
+
+  .order-item{ background:var(--surface-2); border:1px solid var(--line); padding:14px 16px; margin-bottom:10px; font-size:13px; }
+  .order-item .order-date{ color:var(--text-dim); font-size:11px; margin-bottom:6px; }
+  .order-item .order-total{ font-weight:700; margin-top:6px; }
+  .order-status{ display:inline-block; font-size:10px; text-transform:uppercase; padding:3px 8px; border:1px solid var(--red-bright); color:var(--red-bright); margin-top:6px; }
+</style>
+</head>
+<body>
+
+<div id="site-header-slot"></div>
+
+<div class="account-page">
+  <h1>Il tuo <span>account.</span></h1>
+
+  <!-- Vista: non loggato -->
+  <div id="authView">
+    <div class="auth-tabs">
+      <button class="auth-tab active" data-auth-tab="login">Accedi</button>
+      <button class="auth-tab" data-auth-tab="register">Registrati</button>
+    </div>
+
+    <div id="loginForm">
+      <div class="form-field">
+        <label>Email</label>
+        <input type="email" id="loginEmail" autocomplete="email">
+      </div>
+      <div class="form-field">
+        <label>Password</label>
+        <input type="password" id="loginPassword" autocomplete="current-password">
+      </div>
+      <button class="save-btn cart-checkout-btn" id="loginSubmitBtn">Accedi</button>
+      <div class="cart-error" id="loginError"></div>
+      <button id="forgotPasswordBtn" class="icon-btn" style="width:100%; margin-top:10px; border:none; text-decoration:underline;">Password dimenticata?</button>
+    </div>
+
+    <div id="registerForm" style="display:none;">
+      <div class="form-field">
+        <label>Nome</label>
+        <input type="text" id="registerName" autocomplete="name">
+      </div>
+      <div class="form-field">
+        <label>Email</label>
+        <input type="email" id="registerEmail" autocomplete="email">
+      </div>
+      <div class="form-field">
+        <label>Password</label>
+        <input type="password" id="registerPassword" autocomplete="new-password">
+      </div>
+      <button class="save-btn cart-checkout-btn" id="registerSubmitBtn">Crea account</button>
+      <div class="cart-error" id="registerError"></div>
+    </div>
+  </div>
+
+  <!-- Vista: loggato -->
+  <div id="accountView" style="display:none;">
+    <div class="account-header-row">
+      <img id="accountAvatarImg" class="account-avatar" style="display:none;">
+      <div id="accountAvatarPlaceholder" class="account-avatar account-avatar-placeholder"></div>
+      <p class="account-greeting" id="accountGreeting"></p>
+    </div>
+
+    <div class="auth-tabs">
+      <button class="account-subtab active" data-account-tab="orders">I miei ordini</button>
+      <button class="account-subtab" data-account-tab="settings">Impostazioni</button>
+    </div>
+
+    <div id="ordersSubview">
+      <div id="myOrdersList"><div class="cart-empty">Caricamento...</div></div>
+    </div>
+
+    <div id="settingsSubview" style="display:none;">
+      <div class="form-field">
+        <label>Foto profilo</label>
+        <input type="file" id="avatarInput" accept="image/*">
+      </div>
+      <div class="form-field">
+        <label>Nome visualizzato</label>
+        <input type="text" id="settingsName">
+      </div>
+      <button class="save-btn cart-checkout-btn" id="saveProfileBtn">Salva modifiche</button>
+      <div class="cart-error" id="settingsError"></div>
+
+      <div class="account-section-title">Sicurezza</div>
+      <div class="form-field">
+        <label>Nuova password</label>
+        <input type="password" id="newPasswordInput" placeholder="Lascia vuoto per non cambiarla" autocomplete="new-password">
+      </div>
+      <button class="save-btn cart-checkout-btn" id="savePasswordBtn">Aggiorna password</button>
+      <div class="cart-error" id="passwordError"></div>
+    </div>
+
+    <button class="icon-btn" id="logoutBtn" style="margin-top:30px; width:100%;">Esci dall'account</button>
+  </div>
+</div>
+
+<div id="site-cart-slot"></div>
+<div class="toast" id="toast"></div>
+
+<script src="/assets/site.js"></script>
+<script>
+  document.querySelectorAll('.auth-tab').forEach(tab=>{
+    tab.addEventListener('click', ()=>{
+      document.querySelectorAll('.auth-tab').forEach(t=>t.classList.remove('active'));
+      tab.classList.add('active');
+      const isLogin = tab.dataset.authTab === 'login';
+      document.getElementById('loginForm').style.display = isLogin ? 'block' : 'none';
+      document.getElementById('registerForm').style.display = isLogin ? 'none' : 'block';
+    });
+  });
+
+  document.querySelectorAll('.account-subtab').forEach(tab=>{
+    tab.addEventListener('click', ()=>{
+      document.querySelectorAll('.account-subtab').forEach(t=>t.classList.remove('active'));
+      tab.classList.add('active');
+      const isOrders = tab.dataset.accountTab === 'orders';
+      document.getElementById('ordersSubview').style.display = isOrders ? 'block' : 'none';
+      document.getElementById('settingsSubview').style.display = isOrders ? 'none' : 'block';
+    });
+  });
+
+  async function refreshAccountPageView(){
+    const authView = document.getElementById('authView');
+    const accountView = document.getElementById('accountView');
+
+    if(!supabaseReady){
+      authView.innerHTML = '<div class="cart-empty">Account non disponibile: Supabase non è ancora configurato.</div>';
+      accountView.style.display = 'none';
+      authView.style.display = 'block';
+      return;
+    }
+
+    const { data: { session } } = await supabaseClient.auth.getSession();
+
+    if(session && session.user){
+      authView.style.display = 'none';
+      accountView.style.display = 'block';
+
+      let displayName = '';
+      let avatarUrl = '';
+      try{
+        const { data: profile } = await supabaseClient
+          .from('profiles').select('full_name, avatar_url').eq('id', session.user.id).single();
+        if(profile){ displayName = profile.full_name || ''; avatarUrl = profile.avatar_url || ''; }
+      }catch(e){}
+
+      document.getElementById('accountGreeting').textContent = displayName ? `Ciao, ${displayName}.` : `Ciao, ${session.user.email}.`;
+      document.getElementById('settingsName').value = displayName;
+
+      const avatarImg = document.getElementById('accountAvatarImg');
+      const avatarPlaceholder = document.getElementById('accountAvatarPlaceholder');
+      if(avatarUrl){
+        avatarImg.src = avatarUrl; avatarImg.style.display = 'block'; avatarPlaceholder.style.display = 'none';
+      } else {
+        avatarImg.style.display = 'none'; avatarPlaceholder.style.display = 'flex';
+        avatarPlaceholder.textContent = (displayName || session.user.email || '?').charAt(0).toUpperCase();
+      }
+
+      loadMyOrders(session.user.email);
+    } else {
+      authView.style.display = 'block';
+      accountView.style.display = 'none';
+    }
+  }
+
+  async function loadMyOrders(email){
+    const wrap = document.getElementById('myOrdersList');
+    wrap.innerHTML = '<div class="cart-empty">Caricamento...</div>';
+    try{
+      const { data, error } = await supabaseClient.from('orders').select('*').eq('customer_email', email).order('created_at', { ascending:false });
+      if(error) throw error;
+      if(!data || data.length === 0){ wrap.innerHTML = '<div class="cart-empty">Nessun ordine ancora effettuato.</div>'; return; }
+
+      wrap.innerHTML = '';
+      data.forEach(order=>{
+        const d = new Date(order.created_at);
+        const dateStr = d.toLocaleDateString('it-IT', { day:'2-digit', month:'short', year:'numeric' });
+        const itemsText = (order.items || []).map(i => `${i.quantity}× ${i.description}`).join(', ');
+        const el = document.createElement('div');
+        el.className = 'order-item';
+        el.innerHTML = `
+          <div class="order-date">${dateStr}</div>
+          <div>${escapeHtml(itemsText)}</div>
+          <div class="order-total">€ ${Number(order.amount_total).toFixed(2)}</div>
+          <span class="order-status">${escapeHtml(order.status || 'pending')}</span>`;
+        wrap.appendChild(el);
+      });
+    }catch(e){
+      console.error(e);
+      wrap.innerHTML = '<div class="cart-empty">Errore nel caricamento degli ordini.</div>';
+    }
+  }
+
+  document.getElementById('registerSubmitBtn').addEventListener('click', async ()=>{
+    const name = document.getElementById('registerName').value.trim();
+    const email = document.getElementById('registerEmail').value.trim();
+    const password = document.getElementById('registerPassword').value;
+    const errorEl = document.getElementById('registerError');
+    errorEl.textContent = '';
+    if(!email || !password){ errorEl.textContent = 'Inserisci email e password.'; return; }
+    if(password.length < 6){ errorEl.textContent = 'La password deve avere almeno 6 caratteri.'; return; }
+    if(!supabaseReady){ errorEl.textContent = 'Supabase non è configurato.'; return; }
+
+    const { error } = await supabaseClient.auth.signUp({ email, password, options: { data: { full_name: name } } });
+    if(error){ errorEl.textContent = error.message; return; }
+    showToast('Account creato! Controlla la tua email per confermare.');
+    refreshAccountPageView();
+  });
+
+  document.getElementById('loginSubmitBtn').addEventListener('click', async ()=>{
+    const email = document.getElementById('loginEmail').value.trim();
+    const password = document.getElementById('loginPassword').value;
+    const errorEl = document.getElementById('loginError');
+    errorEl.textContent = '';
+    if(!email || !password){ errorEl.textContent = 'Inserisci email e password.'; return; }
+    if(!supabaseReady){ errorEl.textContent = 'Supabase non è configurato.'; return; }
+
+    const { error } = await supabaseClient.auth.signInWithPassword({ email, password });
+    if(error){ errorEl.textContent = 'Credenziali non valide.'; return; }
+    showToast('Accesso effettuato.');
+    refreshAccountPageView();
+  });
+
+  document.getElementById('forgotPasswordBtn').addEventListener('click', async ()=>{
+    const email = document.getElementById('loginEmail').value.trim();
+    const errorEl = document.getElementById('loginError');
+    errorEl.textContent = '';
+    if(!email){ errorEl.textContent = 'Scrivi la tua email qui sopra, poi tocca di nuovo questo link.'; return; }
+    if(!supabaseReady){ errorEl.textContent = 'Supabase non è configurato.'; return; }
+
+    const { error } = await supabaseClient.auth.resetPasswordForEmail(email, { redirectTo: window.location.origin + '/account.html' });
+    if(error){ errorEl.textContent = error.message; return; }
+    showToast('Email di ripristino inviata, controlla la posta.');
+  });
+
+  document.getElementById('logoutBtn').addEventListener('click', async ()=>{
+    if(supabaseReady){ await supabaseClient.auth.signOut(); }
+    showToast('Disconnesso.');
+    refreshAccountPageView();
+  });
+
+  document.getElementById('saveProfileBtn').addEventListener('click', async ()=>{
+    const errorEl = document.getElementById('settingsError');
+    errorEl.textContent = '';
+    const newName = document.getElementById('settingsName').value.trim();
+    const file = document.getElementById('avatarInput').files[0];
+
+    const { data: { session } } = await supabaseClient.auth.getSession();
+    if(!session){ errorEl.textContent = 'Sessione scaduta, accedi di nuovo.'; return; }
+
+    let avatarUrl = null;
+    if(file){
+      if(file.size > 3 * 1024 * 1024){ errorEl.textContent = 'Immagine troppo grande (max 3MB).'; return; }
+      const ext = file.name.split('.').pop();
+      const path = `${session.user.id}/avatar.${ext}`;
+      const { error: uploadError } = await supabaseClient.storage.from('avatars').upload(path, file, { upsert: true });
+      if(uploadError){ errorEl.textContent = 'Errore nel caricamento della foto: ' + uploadError.message; return; }
+      const { data: publicUrlData } = supabaseClient.storage.from('avatars').getPublicUrl(path);
+      avatarUrl = publicUrlData.publicUrl + '?t=' + Date.now();
+    }
+
+    const updatePayload = { full_name: newName };
+    if(avatarUrl) updatePayload.avatar_url = avatarUrl;
+
+    const { error: profileError } = await supabaseClient.from('profiles').update(updatePayload).eq('id', session.user.id);
+    if(profileError){ errorEl.textContent = 'Errore nel salvataggio: ' + profileError.message; return; }
+
+    await supabaseClient.auth.updateUser({ data: { full_name: newName } });
+    showToast('Profilo aggiornato.');
+    refreshAccountPageView();
+  });
+
+  document.getElementById('savePasswordBtn').addEventListener('click', async ()=>{
+    const errorEl = document.getElementById('passwordError');
+    errorEl.textContent = '';
+    const newPassword = document.getElementById('newPasswordInput').value;
+    if(!newPassword){ errorEl.textContent = 'Inserisci una nuova password.'; return; }
+    if(newPassword.length < 6){ errorEl.textContent = 'La password deve avere almeno 6 caratteri.'; return; }
+
+    const { error } = await supabaseClient.auth.updateUser({ password: newPassword });
+    if(error){ errorEl.textContent = error.message; return; }
+    document.getElementById('newPasswordInput').value = '';
+    showToast('Password aggiornata.');
+  });
+
+  (async function(){
+    await initSharedUI();
+    refreshAccountPageView();
+  })();
+</script>
+
+</body>
+</html>
